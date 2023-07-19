@@ -1,0 +1,69 @@
+<div>
+  <div class="stats shadow">
+    <div class="stat">
+      <div class="overflow-x-auto">
+        <table class="table">
+          <!-- head -->
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>
+                Points
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- row 1 -->
+            <%= for user <- @users do %>
+              <tr>
+                <td>
+                  <div class="flex justify-center items-center text-xl">
+                    <%= user.name %>
+                    <form :if={@editingName} action="">
+                      <input type="text" />
+                      <button class="btn btn-primary btn-xs">
+                        Save
+                      </button>
+                    </form>
+                    <button :if={!@editingName} class="ml-3 btn btn-square btn-xs">
+                      <.icon name="hero-pencil-square" />
+                    </button>
+                  </div>
+                </td>
+                <td :if={user.slug == @slug}>
+                  <form class="join" phx-change="point">
+                    <input
+                      :for={value <- @values}
+                      class="mx-1 join-item btn rounded-sm checked:bg-none"
+                      checked={user.point == value}
+                      value={value}
+                      type="radio"
+                      name="options"
+                      aria-label={value}
+                    />
+                  </form>
+                </td>
+                <td :if={user.slug != @slug}>
+                  <form class="join">
+                    <%= for value <- @values do %>
+                      <input
+                        disabled
+                        class="mx-1 join-item btn rounded-sm checked:bg-none"
+                        value={if(@reveal, do: value, else: "*")}
+                        checked={@reveal && user.point == value}
+                        type="radio"
+                        name={"#{user.name}-options"}
+                        aria-label={if(@reveal, do: value, else: "*")}
+                      />
+                    <% end %>
+                  </form>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <button class="btn mt-2" phx-click="reveal">Show All</button>
+      </div>
+    </div>
+  </div>
+</div>
