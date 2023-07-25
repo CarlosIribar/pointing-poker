@@ -20,24 +20,11 @@ defmodule PointerPokerWeb.IndexLive do
   end
 
   def handle_params(%{"room" => room}, _uri, socket) do
-    # slug = get_slug(socket)
-
-    if connected?(socket) do
-      # name = get_name(socket)
-      # Presence.track(self(), room, slug, %{slug: slug, name: name, point: "0", reveal: false})
-
-      # Phoenix.PubSub.subscribe(PointerPoker.PubSub, room)
-    end
-
     socket =
       assign(socket,
         room_name: room,
         users: Presence.list(room) |> get_users
       )
-
-    # |> assign_new(:slug, fn -> slug end)
-
-    IO.inspect(socket, label: "initial socket")
 
     {:noreply, socket}
   end
@@ -119,7 +106,6 @@ defmodule PointerPokerWeb.IndexLive do
   end
 
   def handle_event("restore", %{"name" => name, "id" => id}, socket) do
-    IO.puts("restore")
 
     socket =
       socket
@@ -128,14 +114,13 @@ defmodule PointerPokerWeb.IndexLive do
 
     %{slug: slug, name: name, room_name: room} = socket.assigns
 
-    Presence.track(self(), room, slug, %{slug: slug, name: name, point: "0", reveal: false})
     Phoenix.PubSub.subscribe(PointerPoker.PubSub, room)
+    Presence.track(self(), room, slug, %{slug: slug, name: name, point: "0", reveal: false})
     {:noreply, socket}
   end
 
   def handle_event("point", %{"options" => point}, socket) do
     socket = assign(socket, point: point)
-    IO.inspect(point, label: "point")
     %{metas: [meta | _]} = Presence.get_by_key(socket.assigns.room_name, socket.assigns.slug)
     Presence.update(self(), socket.assigns.room_name, socket.assigns.slug, %{meta | point: point})
     {:noreply, socket}
@@ -149,10 +134,8 @@ defmodule PointerPokerWeb.IndexLive do
     {:noreply, socket}
   end
 
-  def handle_info(%{event: "presence_diff", payload: payload} = event, socket) do
+  def handle_info(%{event: "presence_diff"}, socket) do
     presences = Presence.list(socket.assigns.room_name)
-    dbg(presences)
-
     socket =
       socket
       |> assign(users: get_users(presences))

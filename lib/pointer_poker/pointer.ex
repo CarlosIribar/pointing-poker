@@ -16,8 +16,7 @@ defmodule PointerPoker.Pointer do
 
   def calc_mean(users) do
     total = Enum.reduce(users, 0, fn elem, acc -> acc + get_number(elem.point) end)
-    len = length(users);
-    dbg(len)
+    len = length(users)
     div(total, if(len == 0, do: 1, else: len))
   end
 
