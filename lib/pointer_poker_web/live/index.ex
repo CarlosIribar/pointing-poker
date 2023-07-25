@@ -14,6 +14,7 @@ defmodule PointerPokerWeb.IndexLive do
        slug: nil,
        point: "0",
        reveal: false,
+       editing_name: false,
        values: ["1", "2", "3", "5", "8", "13", "21", "?"]
      )}
   end
@@ -41,17 +42,27 @@ defmodule PointerPokerWeb.IndexLive do
     {:noreply, socket}
   end
 
-  def handle_params(params, _uri, socket) do
+  def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
 
   def render(assigns) do
     ~H"""
     <div>
+      <h1 class="text-4xl font-bold mx-auto my-6">Pointing Poker</h1>
       <.create_room :if={@live_action != :show} />
       <section :if={@live_action == :show} class="flex gap-4" phx-hook="restore" id="pointing-poker">
-        <.pointer users={@users} slug={@slug} values={@values} reveal={@reveal}></.pointer>
+        <.pointer
+          users={@users}
+          editing_name={@editing_name}
+          slug={@slug}
+          values={@values}
+          reveal={@reveal}
+        >
+        </.pointer>
         <.stats
+          :if={@reveal}
+          has_consensus={Pointer.has_consensus(@users)}
           mean={Pointer.calc_mean(@users)}
           max={Pointer.calc_max(@users)}
           min={Pointer.calc_min(@users)}
@@ -79,8 +90,32 @@ defmodule PointerPokerWeb.IndexLive do
     {:noreply, socket}
   end
 
+  def handle_event("rename", %{"name" => name}, socket) do
+    socket =
+      assign(socket,
+        name: name,
+        editing_name: false
+      )
+
+    socket =
+      push_event(socket, "saveName", %{
+        name: name,
+        id: get_slug(socket)
+      })
+
+    %{metas: [meta | _]} = Presence.get_by_key(socket.assigns.room_name, socket.assigns.slug)
+    Presence.update(self(), socket.assigns.room_name, socket.assigns.slug, %{meta | name: name})
+
+    {:noreply, socket}
+  end
+
   def handle_event("saved-name", _, socket) do
     {:noreply, push_patch(socket, to: "/#{socket.assigns.room_name}")}
+  end
+
+  def handle_event("edit-name", _, socket) do
+    socket = assign(socket, editing_name: true)
+    {:noreply, socket}
   end
 
   def handle_event("restore", %{"name" => name, "id" => id}, socket) do
@@ -135,32 +170,50 @@ defmodule PointerPokerWeb.IndexLive do
 
   def create_room(assigns) do
     ~H"""
-    <form
-      id="create-room-form"
-      class="form-control w-full max-w-xs"
-      phx-hook="save"
-      phx-submit="create-room"
-    >
-      <label class="label">
-        <span class="label-text">Room name</span>
-      </label>
-      <input
-        type="text"
-        name="room"
-        placeholder="Rooom name"
-        class="input input-bordered w-full max-w-xs"
-      />
-      <label class="label">
-        <span class="label-text">User Name</span>
-      </label>
-      <input
-        type="text"
-        name="username"
-        placeholder="User Name"
-        class="input input-bordered w-full max-w-xs"
-      />
-      <button class="btn mt-2">Create</button>
-    </form>
+    <div class="flex gap-10">
+      <form
+        id="create-room-form"
+        class="form-control w-full max-w-xs"
+        phx-hook="save"
+        phx-submit="create-room"
+      >
+        <label class="label">
+          <span class="label-text">Room name</span>
+        </label>
+        <input
+          type="text"
+          name="room"
+          placeholder="Rooom name"
+          class="input input-bordered w-full max-w-xs"
+        />
+        <label class="label">
+          <span class="label-text">User Name</span>
+        </label>
+        <input
+          type="text"
+          name="username"
+          placeholder="User Name"
+          class="input input-bordered w-full max-w-xs"
+        />
+        <button class="btn mt-2">Create</button>
+      </form>
+      <div>
+        <p class="text-lg mb-4">Please follow the instructions below to get started:</p>
+
+        <ul class="list-disc ml-6">
+          <!-- Step 1: Room Name -->
+          <li class="text-lg mb-2">Choose a Room Name.</li>
+          <!-- Step 2: User Name -->
+          <li class="text-lg mb-2">Enter Your User Name.</li>
+          <!-- Step 3: Invite Others -->
+          <li class="text-lg mb-2">
+            Invite Others: Share the generated link with other participants.
+          </li>
+          <!-- Step 4: Start Pointing! -->
+          <li class="text-lg">Start Pointing: Begin the pointing poker process.</li>
+        </ul>
+      </div>
+    </div>
     """
   end
 
@@ -195,6 +248,22 @@ defmodule PointerPokerWeb.IndexLive do
               </tr>
             </tbody>
           </table>
+          <div :if={@has_consensus} class="alert alert-success mt-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="stroke-current shrink-0 h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>Consensus!</span>
+          </div>
         </div>
       </div>
     </div>

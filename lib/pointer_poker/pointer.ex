@@ -1,4 +1,19 @@
 defmodule PointerPoker.Pointer do
+  
+  def has_consensus(users) do
+    case Enum.reduce(
+      users,
+      0,
+      fn elem, acc ->
+        num = get_number(elem.point)
+        if num == acc or acc == 0, do: num, else: -99
+      end
+    ) do 
+    -99 -> false 
+    _ -> true
+    end
+  end
+
   def calc_mean(users) do
     total = Enum.reduce(users, 0, fn elem, acc -> acc + get_number(elem.point) end)
     len = length(users);

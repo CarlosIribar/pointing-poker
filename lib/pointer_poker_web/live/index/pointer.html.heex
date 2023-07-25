@@ -17,17 +17,19 @@
             <%= for user <- @users do %>
               <tr>
                 <td>
-                  <div class="flex justify-center items-center text-xl">
-                    <%= user.name %>
-                    <form :if={@editingName} action="">
-                      <input type="text" />
+                  <div class="flex justify-start items-center text-xl">
+                    <form :if={@editing_name && user.slug == @slug} phx-submit="rename">
+                      <input type="text" name="name"/>
                       <button class="btn btn-primary btn-xs">
                         Save
                       </button>
                     </form>
-                    <button :if={!@editingName} class="ml-3 btn btn-square btn-xs">
-                      <.icon name="hero-pencil-square" />
-                    </button>
+                    <div class="contents">
+                      <span :if={!@editing_name || user.slug != @slug}><%= user.name %></span>
+                      <button :if={!@editing_name && user.slug == @slug} class="ml-3 btn btn-square btn-xs" phx-click="edit-name">
+                        <.icon name="hero-pencil-square" />
+                      </button>
+                    </div>
                   </div>
                 </td>
                 <td :if={user.slug == @slug}>
